@@ -1,0 +1,350 @@
+@import "tailwindcss";
+@import "lenis/dist/lenis.css";
+
+/*
+ * Design tokens. Change the colours here to re-theme the whole site.
+ * (Content lives in src/content/site.ts, not here.)
+ */
+@theme {
+  --color-ink: #0a0a0b; /* page background */
+  --color-ink-2: #131316; /* raised surfaces */
+  --color-paper: #f2f0eb; /* main text */
+  --color-muted: #9a988f; /* secondary text */
+  --color-line: rgb(242 240 235 / 0.12); /* hairlines */
+  --color-accent: #d7ff3a; /* acid lime */
+  --color-violet: #7c5cff;
+  --color-flame: #ff4d1f;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-marquee: marquee var(--marquee-duration, 40s) linear infinite;
+  --animate-marquee-reverse: marquee var(--marquee-duration, 40s) linear infinite reverse;
+
+  @keyframes marquee {
+    from {
+      transform: translate3d(0, 0, 0);
+    }
+    to {
+      transform: translate3d(-50%, 0, 0);
+    }
+  }
+}
+
+/* Fonts come from next/font (see src/app/layout.tsx). */
+@theme inline {
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-instrument), ui-serif, Georgia, serif;
+}
+
+@layer base {
+  html {
+    background: var(--color-ink);
+    color: var(--color-paper);
+    color-scheme: dark;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    overflow-x: clip;
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+}
+
+/* Native smooth anchors only when Lenis is not running and motion is OK. */
+@media (prefers-reduced-motion: no-preference) {
+  html:not(.lenis) {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Custom cursor active: hide the system one. */
+html.has-custom-cursor,
+html.has-custom-cursor * {
+  cursor: none !important;
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------- hero */
+
+/* Name on two lines, bold but sized to share the first screen with the portrait. */
+.hero-name {
+  font-size: clamp(2.6rem, 11vw, 4rem);
+  line-height: 0.84;
+  letter-spacing: -0.045em;
+}
+@media (min-width: 768px) {
+  .hero-name {
+    font-size: clamp(3rem, 6vw, 5.5rem);
+  }
+}
+@keyframes portrait-in {
+  from {
+    clip-path: inset(100% 0 0 0 round 2rem);
+    transform: scale(1.12);
+  }
+  to {
+    clip-path: inset(0 0 0 0 round 2rem);
+    transform: scale(1);
+  }
+}
+.anim-portrait {
+  animation: portrait-in 1.4s var(--ease-out-expo) both;
+}
+
+/* Faded wordmark at the very bottom of the page, as wide as the content column (72rem). */
+.footer-name {
+  font-size: calc((min(100vw, 72rem) - 2.5rem) / (var(--chars, 3) * 0.56));
+  line-height: 0.74;
+  letter-spacing: -0.05em;
+  margin-bottom: -0.06em;
+}
+@media (min-width: 768px) {
+  .footer-name {
+    font-size: calc((min(100vw, 72rem) - 4rem) / (var(--chars, 3) * 0.56));
+  }
+}
+
+/* Letters light up on hover; digits are drawn as an outline. */
+.hero-letter {
+  transition: color 0.3s ease;
+}
+.hero-letter:hover {
+  color: var(--color-accent);
+}
+.hero-digit {
+  color: transparent;
+  -webkit-text-stroke: 0.03em var(--color-accent);
+  transition: color 0.3s ease;
+}
+.hero-digit:hover {
+  color: var(--color-accent);
+}
+
+/* Intro animations are pure CSS so they run before JS loads (fast LCP, and
+   they also play in no-JS / headless contexts). */
+@keyframes rise {
+  from {
+    transform: translate3d(0, 105%, 0) rotate(8deg);
+  }
+  to {
+    transform: translate3d(0, 0, 0) rotate(0);
+  }
+}
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 1.25rem, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.anim-rise {
+  transform-origin: 0 100%;
+  animation: rise 1.25s var(--ease-out-expo) both;
+}
+.anim-fade-up {
+  animation: fade-up 1s var(--ease-out-expo) both;
+}
+
+/* --------------------------------------------------------- backdrop */
+
+/* Site-wide animated background (src/components/backdrop.tsx), fixed behind
+   every section so the space around the compact content column never sits
+   flat: drifting colour fields, a slowly moving dot grid, rising sparks. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  overflow: hidden;
+  pointer-events: none;
+}
+.backdrop-fields {
+  position: absolute;
+  inset: 0;
+  opacity: 0.7;
+}
+@keyframes dots-drift {
+  to {
+    transform: translate3d(28px, 28px, 0);
+  }
+}
+/* Dots are strongest at the edges (where the blank space is) and faint behind the text. */
+.backdrop-dots {
+  position: absolute;
+  inset: -28px;
+  background-image: radial-gradient(rgb(242 240 235 / 0.13) 1px, transparent 1.6px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse 55% 65% at 50% 50%, rgb(0 0 0 / 0.2), black 95%);
+  animation: dots-drift 8s linear infinite;
+  will-change: transform;
+}
+@keyframes spark-rise {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0;
+  }
+  15%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--spark-x, 0), -110vh, 0);
+    opacity: 0;
+  }
+}
+.spark {
+  position: absolute;
+  top: 100%;
+  border-radius: 9999px;
+  background: var(--color-accent);
+  box-shadow: 0 0 10px 1px rgb(215 255 58 / 0.6);
+  animation: spark-rise var(--spark-t, 20s) linear infinite;
+  animation-delay: var(--spark-d, 0s);
+  will-change: transform, opacity;
+}
+
+/* Slowly turning text ring on the hero portrait. */
+@keyframes orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.anim-orbit {
+  animation: orbit 22s linear infinite;
+}
+
+/* Soft moving colour fields (in the backdrop). Transform-only = GPU cheap. */
+@keyframes drift-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(18%, 12%, 0) scale(1.15);
+  }
+}
+@keyframes drift-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.1);
+  }
+  50% {
+    transform: translate3d(-20%, -8%, 0) scale(0.95);
+  }
+}
+@keyframes drift-c {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(10%, -16%, 0);
+  }
+}
+.blob {
+  position: absolute;
+  border-radius: 9999px;
+  will-change: transform;
+}
+.blob-a {
+  background: radial-gradient(closest-side, rgb(124 92 255 / 0.55), transparent);
+  animation: drift-a 18s ease-in-out infinite;
+}
+.blob-b {
+  background: radial-gradient(closest-side, rgb(255 77 31 / 0.4), transparent);
+  animation: drift-b 22s ease-in-out infinite;
+}
+.blob-c {
+  background: radial-gradient(closest-side, rgb(215 255 58 / 0.22), transparent);
+  animation: drift-c 26s ease-in-out infinite;
+}
+
+/* Faint construction grid, faded out towards the edges. */
+.hero-grid {
+  background-image:
+    linear-gradient(to right, rgb(242 240 235 / 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(242 240 235 / 0.06) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 30%, transparent 75%);
+}
+
+/* ---------------------------------------------------------------- grain */
+
+@keyframes grain {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  20% {
+    transform: translate3d(-4%, 3%, 0);
+  }
+  40% {
+    transform: translate3d(3%, -5%, 0);
+  }
+  60% {
+    transform: translate3d(-2%, 4%, 0);
+  }
+  80% {
+    transform: translate3d(5%, -2%, 0);
+  }
+}
+.grain {
+  position: fixed;
+  inset: -10%;
+  z-index: 70;
+  pointer-events: none;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.4 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain 0.9s steps(5) infinite;
+}
+
+/* ----------------------------------------------------- reduced motion */
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-rise,
+  .anim-fade-up,
+  .anim-portrait {
+    animation: fade-in 0.6s ease both;
+  }
+  .blob,
+  .grain,
+  .backdrop-dots,
+  .spark,
+  .anim-orbit {
+    animation: none;
+  }
+  .animate-marquee,
+  .animate-marquee-reverse {
+    animation-play-state: paused;
+  }
+}
